@@ -47,7 +47,8 @@ public class UploadServerThread extends Thread {
 
                 // Create an instance of ProcessRequest and pass the input stream to it
                 System.out.print("is POST");
-                ProcessRequest.handleRequest(in);
+                httpServlet.doPost(req, res);
+                
             } else {
 
                 try {
