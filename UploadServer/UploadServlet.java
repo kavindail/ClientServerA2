@@ -103,6 +103,9 @@ public class UploadServlet extends HttpServlet {
                                         }
                                 }
                         }
+                        System.out.println("Caption: " + formFields.get("caption"));
+                        System.out.println("Date: " + formFields.get("date"));
+                        System.out.println("File name: " + filename);
 
                         // Save the uploaded file to a folder
                         if (filename != null && fileData != null) {
