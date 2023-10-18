@@ -3,6 +3,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.io.*;
 import java.nio.file.*;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.awt.image.BufferedImage;
@@ -53,28 +54,29 @@ public class UploadServlet extends HttpServlet {
         }
 
         @Override
-        protected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        protected void doPost(HttpServletRequest request, HttpServletResponse response) {
                 try {
-                        InputStream inputStream = request.getInputStream();
-                        BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
-
-                        // Read the HTTP request headers
-                        String line;
-
-                        // Read and process the POST body (multipart form data)
-
-                        StringBuilder requestBody = new StringBuilder();
-                        while ((line = reader.readLine()) != null) {
-                                requestBody.append(line).append("\r\n");
+                        // Use a ByteArrayOutputStream to capture the entire POST body as bytes
+                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                        byte[] buffer = new byte[2048];
+                        int bytesRead;
+                        while ((bytesRead = request.getInputStream().read(buffer)) != -1) {
+                                baos.write(buffer, 0, bytesRead);
                         }
+                        byte[] inputData = baos.toByteArray();
 
-                        // Split multipart form data into parts
-                        String[] parts = requestBody.toString().split("--"); // Split by boundary, no specific boundary
-                                                                             // needed
+                        // Convert only a portion of the byte data to string for parsing form fields
+                        String dataStr = new String(inputData, StandardCharsets.UTF_8);
+
+                        // Split multipart form data into parts using a basic split (this might still be
+                        // problematic, see earlier explanation)
+                        String[] parts = dataStr.split("--");
 
                         Map<String, String> formFields = new HashMap<>();
                         String filename = null;
                         byte[] fileData = null;
+
+                        int offset = 0; // Use this offset to locate the byte data of the image
 
                         for (String part : parts) {
                                 if (part.contains("Content-Disposition: form-data; name=\"caption\"")) {
@@ -88,37 +90,38 @@ public class UploadServlet extends HttpServlet {
                                         // Extract the file name
                                         filename = part.split("filename=\"")[1].split("\"")[0];
 
-                                        // Extract file data
+                                        // Determine where the file data starts in the byte array
                                         int dataStart = part.indexOf("\r\n\r\n") + 4;
-                                        byte[] partBytes = part.substring(dataStart).getBytes();
-                                        // Concatenate the part bytes
-                                        if (fileData == null) {
-                                                fileData = partBytes;
-                                        } else {
-                                                byte[] combined = new byte[fileData.length + partBytes.length];
-                                                System.arraycopy(fileData, 0, combined, 0, fileData.length);
-                                                System.arraycopy(partBytes, 0, combined, fileData.length,
-                                                                partBytes.length);
-                                                fileData = combined;
-                                        }
-                                }
-                        }
-                        System.out.println("Caption: " + formFields.get("caption"));
-                        System.out.println("Date: " + formFields.get("date"));
-                        System.out.println("File name: " + filename);
+                                        int headerBytes = dataStr.substring(0, offset + dataStart)
+                                                        .getBytes(StandardCharsets.UTF_8).length;
 
-                        // Save the uploaded file to a folder
-                        if (filename != null && fileData != null) {
-                                String fileNameWithCaption = formFields.get("caption") + "_" + formFields.get("date")
-                                                + "_" + filename;
-                                Path filePath = Paths
-                                                .get("./images/" + fileNameWithCaption);
-                                System.out.println("Saving to path: " + filePath.toString());
-                                Files.write(filePath, fileData);
+                                        // Extract file data bytes
+                                        fileData = Arrays.copyOfRange(inputData, headerBytes, headerBytes
+                                                        + part.getBytes(StandardCharsets.UTF_8).length - dataStart);
+                                }
+                                offset += part.length() + 2; // +2 for the -- boundary
                         }
-                } catch (Exception e) {
+
+                        filename = formFields.get("caption") + "_" + formFields.get("date") + "_" + filename;
+                        System.out.println(filename);
+
+                        // Write to the specified folder
+                        String directoryPath = "./images/";
+                        String filePath = directoryPath + filename;
+                        if (filename != "null_null_null") {// Write the file data to the specified file
+                                try (FileOutputStream fos = new FileOutputStream(filePath)) {
+                                        fos.write(fileData);
+                                } catch (IOException e) {
+                                        e.printStackTrace();
+                                }
+                                PrintWriter out = new PrintWriter(response.getOutputStream(), true);
+
+                                // Write the HTTP status line and headers
+                                out.println("GET HTTP/1.1 200 OK");
+                        }
+
+                } catch (IOException e) {
                         e.printStackTrace();
                 }
         }
-
 }

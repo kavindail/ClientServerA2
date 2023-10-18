@@ -41,16 +41,15 @@ public class UploadServerThread extends Thread {
             BufferedReader inputReader = new BufferedReader(new InputStreamReader(in));
 
             String requestLine = inputReader.readLine();
-
-            if (requestLine != null && requestLine.startsWith("POST /")) {
+            System.out.println(requestLine);
+            if (requestLine != null && requestLine.startsWith("POST")) {
                 // This is an HTTP POST request to the /upload endpoint
-
+                System.out.println("POST");
                 // Create an instance of ProcessRequest and pass the input stream to it
-                System.out.print("is POST");
                 httpServlet.doPost(req, res);
-                
-            } else {
-
+                socket.close();
+            } else if (requestLine != null && requestLine.startsWith("GET")) {
+                System.out.println("GET");
                 try {
                     httpServlet.doGet(req, res);
                 } catch (Exception e) {
