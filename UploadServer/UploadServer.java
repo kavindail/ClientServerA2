@@ -11,7 +11,7 @@ public class UploadServer {
             System.exit(-1);
         }
 
-        while (true) { 
+        while (true) {
             new UploadServerThread(serverSocket.accept()).start();
             System.out.println("New connection accepted.");
         }

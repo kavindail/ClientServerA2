@@ -10,6 +10,9 @@ import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
 
 public class UploadServlet extends HttpServlet {
+        public UploadServlet() {
+
+        }
 
         @Override
         protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
@@ -54,14 +57,16 @@ public class UploadServlet extends HttpServlet {
         }
 
         @Override
-        protected void doPost(HttpServletRequest request, HttpServletResponse response) {
+        protected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
                 try {
                         // Use a ByteArrayOutputStream to capture the entire POST body as bytes
                         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                        byte[] buffer = new byte[2048];
+                        byte[] buffer = new byte[4000000];
                         int bytesRead;
                         while ((bytesRead = request.getInputStream().read(buffer)) != -1) {
                                 baos.write(buffer, 0, bytesRead);
+                                break;
+
                         }
                         byte[] inputData = baos.toByteArray();
 
@@ -82,7 +87,8 @@ public class UploadServlet extends HttpServlet {
                                 if (part.contains("Content-Disposition: form-data; name=\"caption\"")) {
                                         String caption = part.split("\r\n\r\n")[1].trim();
                                         formFields.put("caption", caption);
-                                } else if (part.contains("Content-Disposition: form-data; name=\"date\"")) {
+                                } else if (part.contains(
+                                                "Content-Disposition: form-data; name=\"date\"")) {
                                         String date = part.split("\r\n\r\n")[1].trim();
                                         formFields.put("date", date);
                                 } else if (part.contains(
@@ -96,32 +102,33 @@ public class UploadServlet extends HttpServlet {
                                                         .getBytes(StandardCharsets.UTF_8).length;
 
                                         // Extract file data bytes
-                                        fileData = Arrays.copyOfRange(inputData, headerBytes, headerBytes
-                                                        + part.getBytes(StandardCharsets.UTF_8).length - dataStart);
+                                        fileData = Arrays.copyOfRange(inputData, headerBytes,
+                                                        headerBytes + part.getBytes(
+                                                                        StandardCharsets.UTF_8).length
+                                                                        - dataStart);
                                 }
                                 offset += part.length() + 2; // +2 for the -- boundary
                         }
 
-                        filename = formFields.get("caption") + "_" + formFields.get("date") + "_" + filename;
+                        filename = formFields.get("caption") + "_" + formFields.get("date") + "_"
+                                        + filename;
                         System.out.println(filename);
 
                         // Write to the specified folder
                         String directoryPath = "./images/";
                         String filePath = directoryPath + filename;
-                        if (filename != "null_null_null") {// Write the file data to the specified file
-                                try (FileOutputStream fos = new FileOutputStream(filePath)) {
-                                        fos.write(fileData);
-                                } catch (IOException e) {
-                                        e.printStackTrace();
-                                }
-                                PrintWriter out = new PrintWriter(response.getOutputStream(), true);
 
-                                // Write the HTTP status line and headers
-                                out.println("GET HTTP/1.1 200 OK");
+                        // Write the file data to the specified file
+                        try (FileOutputStream fos = new FileOutputStream(filePath)) {
+                                fos.write(fileData);
+
+                        } catch (IOException e) {
+                                e.printStackTrace();
                         }
 
                 } catch (IOException e) {
                         e.printStackTrace();
                 }
+                System.exit(0);
         }
 }
