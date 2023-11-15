@@ -17,6 +17,7 @@ public class UploadServlet extends HttpServlet {
         @Override
         protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
                 // Prepare the HTML content
+                
                 String htmlContent = "<!DOCTYPE html>"
                                 + "<html>"
                                 + "<body>"
@@ -25,7 +26,7 @@ public class UploadServlet extends HttpServlet {
                                 + "Caption: <input type='text' name='caption'><br><br>"
                                 + "Date: <input type='date' name='date'><br><br>"
                                 + "File: <input type='file' name='file'><br><br>"
-                                + "<input type='submit' value='Upload'>"
+                                + "<input type='submit' value='Submit'>"
                                 + "</form>"
                                 + "</body>"
                                 + "</html>";
@@ -59,19 +60,26 @@ public class UploadServlet extends HttpServlet {
         @Override
         protected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
                 try {
+
+                        System.out.println("in doPOST");
+
                         // Use a ByteArrayOutputStream to capture the entire POST body as bytes
                         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                        byte[] buffer = new byte[4000000];
+                        byte[] buffer = new byte[8192];
                         int bytesRead;
                         while ((bytesRead = request.getInputStream().read(buffer)) != -1) {
                                 baos.write(buffer, 0, bytesRead);
-                                break;
-
                         }
+                        
+                        // Send a successful response
+                        System.out.println("File processed successfully.");
+
                         byte[] inputData = baos.toByteArray();
 
                         // Convert only a portion of the byte data to string for parsing form fields
                         String dataStr = new String(inputData, StandardCharsets.UTF_8);
+
+                        System.out.println(dataStr);
 
                         // Split multipart form data into parts using a basic split (this might still be
                         // problematic, see earlier explanation)
@@ -129,6 +137,5 @@ public class UploadServlet extends HttpServlet {
                 } catch (IOException e) {
                         e.printStackTrace();
                 }
-                System.exit(0);
         }
 }

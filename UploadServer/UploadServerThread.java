@@ -1,4 +1,5 @@
 import java.net.*;
+import java.nio.charset.StandardCharsets;
 import java.io.*;
 
 public class UploadServerThread extends Thread {
@@ -11,28 +12,6 @@ public class UploadServerThread extends Thread {
 
     public void run() {
         try {
-            // OutputStream out = socket.getOutputStream();
-
-            // String htmlResponse = "<!DOCTYPE html>"
-            // + "<html>"
-            // + "<body>"
-            // + "<p>Please fill out the form below to upload your file.</p>"
-            // + "<form action='/upload' method='post' enctype='multipart/form-data'>"
-            // + "Caption: <input type='text' name='caption'><br><br>"
-            // + "Date: <input type='date' name='date'><br><br>"
-            // + "File: <input type='file' name='file'><br><br>"
-            // + "<input type='submit' value='Upload'>"
-            // + "</form>"
-            // + "</body>"
-            // + "</html>";
-            //
-            //
-            // String httpResponse = "HTTP/1.1 200 OK\r\n"
-            // + "Content-Length: " + htmlResponse.length() + "\r\n"
-            // + "Content-Type: text/html\r\n\r\n"
-            // + htmlResponse;
-
-            // out.write(httpResponse.getBytes());
             InputStream in = socket.getInputStream();
             HttpServletRequest req = new HttpServletRequest(in);
             OutputStream baos = new ByteArrayOutputStream();
@@ -42,6 +21,10 @@ public class UploadServerThread extends Thread {
 
             String requestLine = inputReader.readLine();
             System.out.println(requestLine);
+            // String line;
+            // while ((line = inputReader.readLine()) != null) {
+            //     System.out.println(line);
+            // }
             if (requestLine.startsWith("GET /")) {
                 System.out.println("GET");
                 try {
@@ -66,7 +49,6 @@ public class UploadServerThread extends Thread {
                     e.printStackTrace();
                 }
 
-                
             }
         } catch (Exception e) {
             e.printStackTrace();
