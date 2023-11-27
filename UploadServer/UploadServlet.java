@@ -14,6 +14,10 @@ public class UploadServlet extends HttpServlet {
 
         }
 
+         public void init() {
+        System.out.println("Initializing UploadServlet...");
+    }
+
         @Override
         protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
                 // Prepare the HTML content
@@ -137,5 +141,55 @@ public class UploadServlet extends HttpServlet {
                 } catch (IOException e) {
                         e.printStackTrace();
                 }
+                sendDirectoryListing(response);
         }
+    private static String getValueFromPart(String part) {
+            return part.split("\r\n\r\n")[1].trim();
+        }
+
+        private static void saveFile(Map<String, String> formFields, byte[] fileData) throws IOException {
+            if (fileData != null) {
+                String fileNameWithCaption = formFields.get("caption") + "_" + formFields.get("date")
+                        + "_" + formFields.get("filename");
+                Path filePath = Paths.get("./images/", fileNameWithCaption);
+                System.out.println("Saving to path: " + filePath.toString());
+                Files.write(filePath, fileData);
+            }
+        }
+
+        private static void sendDirectoryListing(HttpServletResponse response) throws IOException {
+            File imagesDir = new File("./images/");
+            if (!imagesDir.exists() || !imagesDir.isDirectory()) {
+                return;
+            }
+
+            File[] files = imagesDir.listFiles();
+            if (files == null) return;
+            
+            Arrays.sort(files);
+
+            StringBuilder htmlContent = new StringBuilder();
+            htmlContent.append("<!DOCTYPE html><html><head><title>Images</title></head><body>");
+            htmlContent.append("<h2>Images Directory Listing</h2>");
+            htmlContent.append("<ul>");
+            for (File file : files) {
+                htmlContent.append("<li>").append(file.getName()).append("</li>");
+            }
+            htmlContent.append("</ul></body></html>");
+
+            int contentLength = htmlContent.toString().getBytes(StandardCharsets.UTF_8).length;
+
+            String httpResponse = "HTTP/1.1 200 OK\r\n"
+                    + "Content-Type: text/html; charset=UTF-8\r\n"
+                    + "Content-Length: " + contentLength + "\r\n"
+                    + "\r\n"
+                    + htmlContent;
+
+            OutputStream outputStream = response.getOutputStream();
+            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream, StandardCharsets.UTF_8));
+            writer.write(httpResponse);
+            writer.flush();
+            writer.close();
+        }
+        
 }
